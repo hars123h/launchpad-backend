@@ -1,0 +1,45 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+.env.test
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Build output
+dist/
+build/
+
+# Coverage output
+coverage/
+
+# Jest cache
+jest-cache/
+jest-output/
+
+# VSCode settings (optional, if using)
+.vscode/
+
+# PM2 logs (if using PM2 for process manager)
+pids/
+*.pid
+*.seed
+
+# Test results
+test-results/
+
+# Misc
+*.tgz
+*.swp
+*.swo
