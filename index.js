@@ -11,7 +11,9 @@ import path from "path";
 import axios from 'axios';
 import cors from 'cors';
 
-const url = `http://localhost:5173`;
+// const url = `http://localhost:5173`;
+const url = `https://launchpad-frontend-zeta.vercel.app`;
+
 const interval = 30000;
 
 import session from "express-session";
@@ -20,7 +22,7 @@ import "./utils/passport.js";
 
 app.use(
   cors({
-    origin: "http://localhost:5173", // your frontend origin
+    origin: "https://launchpad-frontend-zeta.vercel.app", // your frontend origin
     credentials: true, // enable cookies
   })
 ); // ✅ Allows all origins
