@@ -8,14 +8,20 @@ import cloudinary from "cloudinary";
 export const registerUser = TryCatch(async (req, res) => {
   const { name, email, password, gender } = req.body;
   console.log("Hello");
-  
-
   const file = req.file;
 
   if (!name || !email || !password || !gender || !file) {
     return res.status(400).json({
       message: "Please give all values",
     });
+  }
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!isValidEmail) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ message: "Password must be at least 6 digit" });
   }
 
   let user = await User.findOne({ email });
@@ -53,7 +59,19 @@ export const registerUser = TryCatch(async (req, res) => {
 export const loginUser = TryCatch(async (req, res) => {
   const { email, password } = req.body;
 
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!isValidEmail) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ message: "Password must be at least 6 digit" });
+  }
+
   const user = await User.findOne({ email });
+
+
+
 
   if (!user)
     return res.status(400).json({
