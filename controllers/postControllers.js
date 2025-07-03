@@ -63,13 +63,32 @@ export const deletePost = TryCatch(async (req, res) => {
 });
 
 export const getAllPosts = TryCatch(async (req, res) => {
-  const posts = await Post.find({ type: "post" })
+  const { limit = 5, cursor, type = "post" } = req.query;
+  const query = { type };
+
+  if (cursor) {
+    query.createdAt = { $lt: new Date(cursor) };
+  }
+
+  const posts = await Post.find(query)
     .sort({ createdAt: -1 })
+    .limit(parseInt(limit))
     .populate("owner", "-password")
     .populate({
       path: "comments.user",
       select: "-password",
     });
+
+  const hasMore = posts.length === parseInt(limit);
+  const nextCursor = hasMore ? posts[posts.length - 1].createdAt : null;
+
+  // const posts = await Post.find({ type: "post" })
+  //   .sort({ createdAt: -1 })
+  //   .populate("owner", "-password")
+  //   .populate({
+  //     path: "comments.user",
+  //     select: "-password",
+  //   });
 
   const reels = await Post.find({ type: "reel" })
     .sort({ createdAt: -1 })
@@ -79,7 +98,10 @@ export const getAllPosts = TryCatch(async (req, res) => {
       select: "-password",
     });
 
-  res.json({ posts, reels });
+  res.json({
+    posts, nextCursor,
+    hasMore, reels
+  });
 });
 
 
