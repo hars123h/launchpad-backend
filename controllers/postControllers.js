@@ -164,39 +164,48 @@ export const getAllPosts = TryCatch(async (req, res) => {
 export const likeUnlikePost = TryCatch(async (req, res) => {
   const post = await Post.findById(req.params.id);
 
-  if (!post)
+  if (!post) {
     return res.status(404).json({
       message: "No Post with this id",
     });
+  }
+
+  let message = "";
 
   if (post.likes.includes(req.user._id)) {
     const index = post.likes.indexOf(req.user._id);
-
     post.likes.splice(index, 1);
-
-    await post.save();
-
-    res.json({
-      message: "Post Unlike",
-    });
+    message = "Post Unliked";
   } else {
     post.likes.push(req.user._id);
-
-    await post.save();
-
-    res.json({
-      message: "Post liked",
-    });
+    message = "Post Liked";
   }
+
+  await post.save();
+
+  // Optional: populate user for frontend if needed
+  const updatedPost = await Post.findById(post._id)
+    .populate("owner", "-password")
+    .populate({ path: "comments.user", select: "-password" });
+
+  res.json({
+    message,
+    post: updatedPost, // 🔥 send updated post to frontend
+  });
 });
 
 export const commentonPost = TryCatch(async (req, res) => {
-  const post = await Post.findById(req.params.id);
+  const post = await Post.findById(req.params.id).populate([
+    { path: "owner", select: "name profilePic" },
+    { path: "comments.user", select: "name profilePic" },
+    { path: "likes", select: "_id" }
+  ]);
 
-  if (!post)
+  if (!post) {
     return res.status(404).json({
       message: "No Post with this id",
     });
+  }
 
   post.comments.push({
     user: req.user._id,
@@ -206,9 +215,11 @@ export const commentonPost = TryCatch(async (req, res) => {
 
   await post.save();
 
-  res.json({
-    message: "Comment Added",
-  });
+  const updatedPost = await Post.findById(post._id)
+    .populate("owner", "-password")
+    .populate({ path: "comments.user", select: "-password" });
+
+  res.status(200).json(updatedPost); // ✅ send updated post back
 });
 
 export const deleteComment = TryCatch(async (req, res) => {
@@ -219,10 +230,11 @@ export const deleteComment = TryCatch(async (req, res) => {
       message: "No Post with this id",
     });
 
-  if (!req.query.commentId)
-    return res.status(404).json({
+  if (!req.query.commentId) {
+    return res.status(400).json({
       message: "Please give comment id",
     });
+  }
 
   const commentIndex = post.comments.findIndex(
     (item) => item._id.toString() === req.query.commentId.toString()
@@ -236,22 +248,25 @@ export const deleteComment = TryCatch(async (req, res) => {
 
   const comment = post.comments[commentIndex];
 
-  if (
+  const isOwner =
     post.owner.toString() === req.user._id.toString() ||
-    comment.user.toString() === req.user._id.toString()
-  ) {
-    post.comments.splice(commentIndex, 1);
+    comment.user.toString() === req.user._id.toString();
 
-    await post.save();
-
-    return res.json({
-      message: "Comment deleted",
-    });
-  } else {
-    return res.status(400).json({
-      message: "Yor are not allowed to delete this comment",
+  if (!isOwner) {
+    return res.status(403).json({
+      message: "You are not allowed to delete this comment",
     });
   }
+
+  post.comments.splice(commentIndex, 1);
+  await post.save();
+
+  // ✅ Return updated post so frontend can update only that one post
+  const updatedPost = await Post.findById(post._id)
+    .populate("owner", "-password")
+    .populate({ path: "comments.user", select: "-password" });
+
+  return res.status(200).json(updatedPost);
 });
 
 export const editCaption = TryCatch(async (req, res) => {
@@ -268,10 +283,14 @@ export const editCaption = TryCatch(async (req, res) => {
     });
 
   post.caption = req.body.caption;
-
   await post.save();
 
-  res.json({
-    message: "post updated",
-  });
+  const updatedPost = await Post.findById(post._id)
+    .populate("owner", "-password")
+    .populate({
+      path: "comments.user",
+      select: "-password",
+    });
+
+  res.json(updatedPost); // ✅ return full updated post
 });
